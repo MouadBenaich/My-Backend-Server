@@ -1,35 +1,31 @@
 const express = require("express");
-const fetch = require("node-fetch");
 const cors = require("cors");
 require("dotenv").config();
+
+const fetch = (...args) => import("node-fetch").then(({default: fetch}) => fetch(...args));
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.post("/clarifai", async (req, res) => {
+app.post("/facepp", async (req, res) => {
   const { imageUrl } = req.body;
 
-  const raw = JSON.stringify({
-    user_app_id: { user_id: "clarifai", app_id: "main" },
-    inputs: [{ data: { image: { url: imageUrl } } }]
-  });
-
   try {
-    const response = await fetch(
-        "https://api.clarifai.com/v2/models/face-detection/versions/45fb9a671625463fa646c3523a3087d5/outputs",
-        {
-            method: "POST",
-            headers: {
-                Accept: "application/json",
-                "Content-Type": "application/json",
-                Authorization: "Key " + process.env.CLARIFAI_KEY
-            },
-            body: raw
-        }
-    );
+    const response = await fetch("https://api-us.faceplusplus.com/facepp/v3/detect", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        api_key: process.env.FACEPP_KEY,
+        api_secret: process.env.FACEPP_SECRET,
+        image_url: imageUrl,
+        return_landmark: 0,
+        return_attributes: "none"
+      })
+    });
+
     const data = await response.json();
-    console.log("Clarifai API raw response:", JSON.stringify(data, null, 2));
+    console.log("Face++ API raw response:", JSON.stringify(data, null, 2));
     res.json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
