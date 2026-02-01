@@ -7,8 +7,8 @@ const knex = require("knex");
 // ✅ Connect to PostgreSQL (Render Internal/External URL via env var)
 const db = knex({
   client: "pg",
-  connection: process.env.DATABASE_URL, // set this in Render Environment Variables
-  ssl: { rejectUnauthorized: false }    // required for Render Postgres
+  connection: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
 });
 
 const fetch = (...args) =>
@@ -17,31 +17,6 @@ const fetch = (...args) =>
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-/* ---------------- FACE++ API ROUTE ---------------- */
-app.post("/facepp", async (req, res) => {
-  const { imageUrl } = req.body;
-
-  try {
-    const response = await fetch("https://api-us.faceplusplus.com/facepp/v3/detect", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        api_key: process.env.FACEPP_KEY,
-        api_secret: process.env.FACEPP_SECRET,
-        image_url: imageUrl,
-        return_landmark: 0,
-        return_attributes: "none"
-      })
-    });
-
-    const data = await response.json();
-    console.log("Face++ API raw response:", JSON.stringify(data, null, 2));
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
 /* ---------------- REGISTER ROUTE ---------------- */
 app.post("/register", async (req, res) => {
@@ -56,14 +31,14 @@ app.post("/register", async (req, res) => {
     const newUser = await db("users")
       .returning("*")
       .insert({
-        name: name,
-        email: email,
-        hash: hash,
+        name,
+        email,
+        hash,
         level: "Beginner", // default level
         joined: new Date()
       });
 
-    res.json(newUser[0]); // send back the user object
+    res.json(newUser[0]);
   } catch (err) {
     console.error(err);
     res.status(400).json("Unable to register");
@@ -92,6 +67,56 @@ app.post("/signin", async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json("Error signing in");
+  }
+});
+
+/* ---------------- FACE++ API ROUTE ---------------- */
+app.post("/facepp", async (req, res) => {
+  const { imageUrl, userId } = req.body;
+
+  try {
+    const response = await fetch("https://api-us.faceplusplus.com/facepp/v3/detect", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        api_key: process.env.FACEPP_KEY,
+        api_secret: process.env.FACEPP_SECRET,
+        image_url: imageUrl,
+        return_landmark: 0,
+        return_attributes: "none"
+      })
+    });
+
+    const data = await response.json();
+
+    if (data.faces && data.faces.length > 0) {
+      // ✅ Face detected → upgrade user level
+      const user = await db("users").where({ id: userId }).first();
+
+      if (user) {
+        let newLevel;
+        switch (user.level) {
+          case "Beginner": newLevel = "Intermediate"; break;
+          case "Intermediate": newLevel = "Advanced"; break;
+          case "Advanced": newLevel = "Expert"; break;
+          default: newLevel = "Master";
+        }
+
+        const updatedUser = await db("users")
+          .where({ id: userId })
+          .update({ level: newLevel })
+          .returning("*");
+
+        res.json({ faces: data.faces, user: updatedUser[0] });
+      } else {
+        res.json({ faces: data.faces });
+      }
+    } else {
+      res.json({ faces: [] });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
   }
 });
 
