@@ -60,4 +60,4 @@ Automatic redeploys on git push
 
 ## 👨‍💻 Author
 Mouad Benaich  
-Ambitious React.js  engineer & UI/UX designer, focused on secure.
+Ambitious React.js  engineer & UI/UX designer, focused on secure .
