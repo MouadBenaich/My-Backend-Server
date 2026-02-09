@@ -54,7 +54,7 @@ Hosted on Render
 
 Environment variables configured in Render dashboard
 
-Automatic redeploys on git push
+Manual redeploys on git push
 
 ---
 
