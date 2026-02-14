@@ -4,7 +4,7 @@ require("dotenv").config();
 const bcrypt = require("bcrypt");
 const knex = require("knex");
 
-// ✅ Connect to PostgreSQL (Render Internal/External URL via env var)
+// ✅ Connect to PostgreSQL ( Render Internal/External URL via env var )
 const db = knex({
   client: "pg",
   connection: process.env.DATABASE_URL,
