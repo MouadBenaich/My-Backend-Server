@@ -58,6 +58,6 @@ Manual redeploys on git push
 
 ---
 
-## 👨‍💻 Author
+## 👨‍💻 Author 
 Mouad Benaich  
 Ambitious React.js  engineer & UI/UX designer, focused on secure.
